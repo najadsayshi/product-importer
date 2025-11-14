@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+  <body>
+    <h3>Products</h3>
+    <div id="list"></div>
+    <script>
+      async function load() {
+        const res = await fetch('/api/products');
+        const j = await res.json();
+        document.getElementById('list').innerText = JSON.stringify(j.items, null, 2);
+      }
+      load();
+    </script>
+  </body>
+</html>

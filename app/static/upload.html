@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <body>
+    <h3>Upload CSV</h3>
+    <input id="file" type="file" accept=".csv"/>
+    <button id="upload">Upload</button>
+    <progress id="uploadProgress" max="100" value="0" style="width:300px"></progress>
+    <div id="status"></div>
+    <script>
+      document.getElementById('upload').onclick = async () => {
+        const f = document.getElementById('file').files[0];
+        if (!f) return alert("Choose CSV");
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/upload");
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            document.getElementById('uploadProgress').value = Math.round((e.loaded/e.total)*100);
+          }
+        };
+        xhr.onreadystatechange = () => {
+          if (xhr.readyState === 4 && xhr.status === 200){
+            const resp = JSON.parse(xhr.responseText);
+            document.getElementById('status').innerText = "Queued, task: " + resp.task_id;
+            const proto = location.protocol === "https:" ? "wss" : "ws";
+            const ws = new WebSocket(`${proto}://${location.host}/ws/import/${resp.task_id}`);
+            ws.onmessage = (ev) => {
+              const msg = JSON.parse(ev.data);
+              document.getElementById('status').innerText = `${msg.phase}: ${msg.message} (${msg.progress}%)`;
+            }
+          } else if (xhr.readyState===4) {
+            document.getElementById('status').innerText = 'Upload failed: ' + xhr.responseText;
+          }
+        };
+        const form = new FormData();
+        form.append('file', f);
+        xhr.send(form);
+      }
+    </script>
+  </body>
+</html>
