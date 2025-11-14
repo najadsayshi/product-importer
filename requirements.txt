@@ -1,9 +1,6 @@
 fastapi
-uvicorn[standard]
-SQLAlchemy>=1.4
+uvicorn
+sqlalchemy
 psycopg2-binary
-alembic
-celery[redis]
+python-dotenv
 redis
-httpx
-python-multipart

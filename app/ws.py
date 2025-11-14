@@ -1,20 +1,24 @@
-from fastapi import WebSocket, WebSocketDisconnect
-from redis.asyncio import Redis
-import os
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
+import redis.asyncio as redis
 
-async def import_websocket(websocket: WebSocket, task_id: str):
+async def import_websocket(websocket, task_id):
     await websocket.accept()
-    redis = Redis.from_url(REDIS_URL, decode_responses=True)
+
+    r = redis.from_url(
+        os.getenv("REDIS_URL"),
+        decode_responses=True
+    )
+    pubsub = r.pubsub()
+    await pubsub.subscribe(task_id)
 
     try:
-        res = await redis.subscribe(f"import:{task_id}")
-        ch = res[0]
-        while await ch.wait_message():
-            msg = await ch.get(encoding="utf-8")
-            await websocket.send_text(msg)
-    except WebSocketDisconnect:
+        while True:
+            msg = await pubsub.get_message(ignore_subscribe_messages=True, timeout=5)
+            if msg:
+                await websocket.send_text(msg["data"])
+                if msg["data"] == "done":
+                    break
+
+    except:
         pass
     finally:
-        redis.close()
-        await redis.wait_closed()
+        await websocket.close()
