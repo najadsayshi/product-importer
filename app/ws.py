@@ -1,11 +1,12 @@
 from fastapi import WebSocket, WebSocketDisconnect
-import aioredis
+from redis.asyncio import Redis
 import os
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
 
 async def import_websocket(websocket: WebSocket, task_id: str):
     await websocket.accept()
-    redis = await aioredis.create_redis(REDIS_URL)
+    redis = Redis.from_url(REDIS_URL, decode_responses=True)
+
     try:
         res = await redis.subscribe(f"import:{task_id}")
         ch = res[0]
