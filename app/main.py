@@ -7,12 +7,16 @@ from . import tasks, ws, crud
 from .models import Base
 from sqlalchemy import create_engine
 from .db import DATABASE_URL
+from fastapi.staticfiles import StaticFiles
 
 UPLOAD_DIR = "/tmp/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+
+app.mount("/static", StaticFiles(directory="app"), name="static")
+
 
 def get_db():
     db = SessionLocal()
